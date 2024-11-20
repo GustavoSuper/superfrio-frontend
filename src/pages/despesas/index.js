@@ -5,11 +5,11 @@ import Header from "../../Header";
 import SideMenu from "../../SideMenu";
 import Footer from "../../Footer";
 import DataTable from "react-data-table-component";
-import './despesas.css'
+import "./despesas.css";
 import DataTableExtensions from "react-data-table-component-extensions";
 import "react-data-table-component-extensions/dist/index.css";
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 export default function List_Despesas({ history }) {
   const [prod, setProd] = useState([]);
@@ -17,7 +17,7 @@ export default function List_Despesas({ history }) {
   const [loading, setLoading] = useState("");
   const [msgvazio, setMsgvazio] = useState("carregando...");
   const [rowsSel, setRowsSel] = useState([]);
-  const [selectedIDS, setselectedIDS] = useState([])
+  const [selectedIDS, setselectedIDS] = useState([]);
 
   const url_string = window.location.href;
   const param = url_string.split("=");
@@ -48,18 +48,18 @@ export default function List_Despesas({ history }) {
     "/" +
     row.dataentrada.substring(0, 4);
 
-    function formatDate(dateISO){
-      const data = new Date(dateISO);
+  function formatDate(dateISO) {
+    const data = new Date(dateISO);
 
-      // Obtém o dia, mês e ano
-      const dia = String(data.getUTCDate()).padStart(2, '0'); // Garante que o dia tenha 2 dígitos
-      const mes = String(data.getUTCMonth() + 1).padStart(2, '0'); // Adiciona 1 ao mês e garante que tenha 2 dígitos
-      const ano = data.getUTCFullYear();
+    // Obtém o dia, mês e ano
+    const dia = String(data.getUTCDate()).padStart(2, "0"); // Garante que o dia tenha 2 dígitos
+    const mes = String(data.getUTCMonth() + 1).padStart(2, "0"); // Adiciona 1 ao mês e garante que tenha 2 dígitos
+    const ano = data.getUTCFullYear();
 
-      // Formata a data como uma string no formato dia/mês/ano
-      const dataFormatada = `${dia}/${mes}/${ano}`;
-      return dataFormatada
-    }
+    // Formata a data como uma string no formato dia/mês/ano
+    const dataFormatada = `${dia}/${mes}/${ano}`;
+    return dataFormatada;
+  }
 
   const CustomFoto = ({ row }) => (
     <a href={row.foto} target="_blank">
@@ -67,25 +67,36 @@ export default function List_Despesas({ history }) {
     </a>
   );
 
+   
+ 
+  
   const columns = [
     {
       name: "Requisição N.",
-      selector: "numero",
+      selector: (row) => row.numero, // Garante que o valor correto é selecionado
       sortable: true,
+      sortFunction: (a, b) => {
+        const numberA = parseFloat(a.numero.replace(/\D/g, '').trim());
+        const numberB = parseFloat(b.numero.replace(/\D/g, '').trim());
+        return numberA - numberB; // Ordem numérica correta
+      },
     },
     {
       name: "Requisitante",
       selector: "nomerequester",
+      sortable: true,
     },
     {
       name: "Criado em",
       selector: "dataentrada",
       cell: (row) => <CustomDate row={row} />,
+      sortable: true,
     },
     {
       name: "Último Update",
       selector: "updatedAt",
       cell: (row) => formatDate(row.updatedAt),
+      sortable: true,
     },
     {
       name: "Status",
@@ -96,15 +107,18 @@ export default function List_Despesas({ history }) {
     {
       name: "Aprovador",
       selector: "nomeaprovador",
+      sortable: true,
     },
-  ];
+];
+  
+
 
   // const goToPage = (state) => {
   //   history.push('/checklistcomp/' + state._id);
   // };
 
   const goToPage = (state) => {
-    history.push('/despesa/' + state._id);
+    history.push("/despesa/" + state._id);
   };
 
   async function loadProd() {
@@ -115,17 +129,17 @@ export default function List_Despesas({ history }) {
     setExportExcel(data);
     //setLoading(false);
   }
- 
-  const [searchByName, setSearchByName] = useState(undefined)
+
+  const [searchByName, setSearchByName] = useState(undefined);
   const [searchByStatus, setSearchByStatus] = useState("");
-  const [startDate, setStartDate] = useState(undefined)
-  const [endDate, setendDate] = useState(undefined)
+  const [startDate, setStartDate] = useState(undefined);
+  const [endDate, setendDate] = useState(undefined);
 
-  const [intervalWindow, setIntervalWindow] = useState(false)
+  const [intervalWindow, setIntervalWindow] = useState(false);
 
-  function checkModalClose(e){
-    if(e.target.className === "selectInterval"){
-      setIntervalWindow(false)
+  function checkModalClose(e) {
+    if (e.target.className === "selectInterval") {
+      setIntervalWindow(false);
     }
   }
 
@@ -140,7 +154,7 @@ export default function List_Despesas({ history }) {
     // if (searchByName) {
     //   filters.push(`name=${searchByName}`);
     // }
-    
+
     // if (searchByStatus) {
     //   filters.push(`status=${searchByStatus}`);
     // }
@@ -157,64 +171,77 @@ export default function List_Despesas({ history }) {
 
     const response = await api.get(query);
     const data = await response.data;
-    if(param[1] && param[1].length === 1){
-      setProd(data.filter(item => item.statusExit && item.statusExit.toLowerCase().includes(param[1].toLowerCase())))
-    } else if(param[1] && param[1].length > 1) {
-      setProd(data.filter(item => item.status && item.status.toLowerCase().includes(param[1].toLowerCase())))
+    if (param[1] && param[1].length === 1) {
+      setProd(
+        data.filter(
+          (item) =>
+            item.statusExit &&
+            item.statusExit.toLowerCase().includes(param[1].toLowerCase())
+        )
+      );
+    } else if (param[1] && param[1].length > 1) {
+      setProd(
+        data.filter(
+          (item) =>
+            item.status &&
+            item.status.toLowerCase().includes(param[1].toLowerCase())
+        )
+      );
     } else {
       setProd(data);
     }
   }
 
-  function submitFilterForm(e){
-    e.preventDefault()
-    loadDespesas()
+  
+  function submitFilterForm(e) {
+    e.preventDefault();
+    loadDespesas();
   }
 
-  function getCurrentDate(){
+  function getCurrentDate() {
     const dataAtual = new Date();
     const ano = dataAtual.getFullYear(); //Obtem o ano
-    const mes = String(dataAtual.getMonth() + 1).padStart(2, '0'); // Adiciona 1 para obter o mês correto e garante que tenha 2 dígitos
-    const dia = String(dataAtual.getDate()).padStart(2, '0'); // Garante que o dia tenha 2 dígitos
+    const mes = String(dataAtual.getMonth() + 1).padStart(2, "0"); // Adiciona 1 para obter o mês correto e garante que tenha 2 dígitos
+    const dia = String(dataAtual.getDate()).padStart(2, "0"); // Garante que o dia tenha 2 dígitos
     const dataFormatada = `${ano}-${mes}-${dia}`;
-    return dataFormatada
+    return dataFormatada;
   }
 
-  async function intervalFilter(e){
+  async function intervalFilter(e) {
     const value = e.target.value;
 
-    if(value === "Em qualquer data"){
-      setendDate(undefined)
-      setStartDate(undefined)
-    }
-    
-    if(value === "No último ano"){
-      setendDate(getCurrentDate())
-
-      const data = new Date(getCurrentDate())
-      data.setFullYear(2023)
-      const novaData = data.toISOString().split('T')[0];
-      setStartDate(novaData)
+    if (value === "Em qualquer data") {
+      setendDate(undefined);
+      setStartDate(undefined);
     }
 
-    if(value === "Nos últimos 6 meses"){
-      setendDate(getCurrentDate())
+    if (value === "No último ano") {
+      setendDate(getCurrentDate());
+
+      const data = new Date(getCurrentDate());
+      data.setFullYear(2023);
+      const novaData = data.toISOString().split("T")[0];
+      setStartDate(novaData);
+    }
+
+    if (value === "Nos últimos 6 meses") {
+      setendDate(getCurrentDate());
 
       const data = new Date(getCurrentDate());
       data.setMonth(data.getMonth() - 6);
-      const novaData = data.toISOString().split('T')[0];
-      setStartDate(novaData)
+      const novaData = data.toISOString().split("T")[0];
+      setStartDate(novaData);
     }
 
-    if(value === "Intervalo personalizado"){
-      setIntervalWindow(true)
+    if (value === "Intervalo personalizado") {
+      setIntervalWindow(true);
     }
   }
 
-  function submitInterval(e){
-    e.preventDefault()
-    setIntervalWindow(false)
-    loadDespesas()
+  function submitInterval(e) {
+    e.preventDefault();
+    setIntervalWindow(false);
+    loadDespesas();
   }
 
   useEffect(() => {
@@ -260,15 +287,17 @@ export default function List_Despesas({ history }) {
       alert("Nenhum registro selecionado !");
     }
   }
+  
+ 
 
   const handleChange = (state) => {
     setRowsSel(state.selectedRows);
-    
-    const AllItems = []
-    if(state.selectedRows[0] !== undefined){
+
+    const AllItems = [];
+    if (state.selectedRows[0] !== undefined) {
       state.selectedRows.map((item) => {
-        AllItems.push(item._id)
-      })
+        AllItems.push(item._id);
+      });
       setselectedIDS(AllItems);
     }
   };
@@ -285,16 +314,21 @@ export default function List_Despesas({ history }) {
     const data = await response.data;
     let arrClone = [];
 
-    for(const index in data){
-      if(data[index].iddespesa.length > 0){
+    for (const index in data) {
+      if (data[index].iddespesa.length > 0) {
         data[index].Numero = data[index].iddespesa[0].numero;
         data[index].Requisitante = data[index].iddespesa[0].nomerequester;
         data[index].Criado = data[index].iddespesa[0].dataentrada;
-        data[index].Status = data[index].iddespesa[0].status == "0" ? "Rascunho" 
-        : data[index].iddespesa[0].status == "1" ? "Aguardando Aprovação"
-        : data[index].iddespesa[0].status == "2" ? "Aprovado"
-        : data[index].iddespesa[0].status == "3" ? "Reprovado"
-        :"";
+        data[index].Status =
+          data[index].iddespesa[0].status == "0"
+            ? "Rascunho"
+            : data[index].iddespesa[0].status == "1"
+            ? "Aguardando Aprovação"
+            : data[index].iddespesa[0].status == "2"
+            ? "Aprovado"
+            : data[index].iddespesa[0].status == "3"
+            ? "Reprovado"
+            : "";
         data[index].Aprovador = data[index].iddespesa[0].nomeaprovador;
         data[index].Tipo = data[index].categoriaText;
         data[index].Valor = data[index].valor;
@@ -311,73 +345,88 @@ export default function List_Despesas({ history }) {
     }
 
     //console.log(arrClone)
-    
+
     const worksheet = XLSX.utils.json_to_sheet(arrClone);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
 
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+    });
     saveAs(blob, "Despesas.xlsx");
     setLoading(false);
-};
+  };
 
-const exportToExcelSelected  = async () => {
-  if (selectedIDS.length === 0) {
-    alert("Nenhum item selecionado");
-    return;
-}
-
-  setLoading(true);
-  setLoading(true);
-  const query = "/despesaItem/aggreg/export";
-  const response = await api.get(query);
-  const alldata = await response.data;
-  console.log(alldata)
-  const data = alldata.filter(item => {
-    return item.iddespesa.some(despesa => selectedIDS.includes(despesa._id));
-  });
-  console.log(data)
-  let arrClone = [];
-
-  for(const index in data){
-    if(data[index].iddespesa.length > 0){
-      data[index].Numero = data[index].iddespesa[0].numero;
-      data[index].Requisitante = data[index].iddespesa[0].nomerequester;
-      data[index].Criado = data[index].iddespesa[0].dataentrada;
-      data[index].Status = data[index].iddespesa[0].status == "0" ? "Rascunho" 
-      : data[index].iddespesa[0].status == "1" ? "Aguardando Aprovação"
-      : data[index].iddespesa[0].status == "2" ? "Aprovado"
-      : data[index].iddespesa[0].status == "3" ? "Reprovado"
-      :"";
-      data[index].Aprovador = data[index].iddespesa[0].nomeaprovador;
-      data[index].Tipo = data[index].categoriaText;
-      data[index].Valor = data[index].valor;
-
-      delete data[index].iddespesa;
-      delete data[index].categoriaText;
-      delete data[index].descr;
-      delete data[index].valor;
-      delete data[index].foto;
-      delete data[index]._id;
-
-      arrClone.push(data[index]);
+  const exportToExcelSelected = async () => {
+    if (selectedIDS.length === 0) {
+      alert("Nenhum item selecionado");
+      return;
     }
-  }
 
-  //console.log(arrClone)
-  
-  const worksheet = XLSX.utils.json_to_sheet(arrClone);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+    setLoading(true);
+    setLoading(true);
+    const query = "/despesaItem/aggreg/export";
+    const response = await api.get(query);
+    const alldata = await response.data;
+    console.log(alldata);
+    const data = alldata.filter((item) => {
+      return item.iddespesa.some((despesa) =>
+        selectedIDS.includes(despesa._id)
+      );
+    });
+    console.log(data);
+    let arrClone = [];
 
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-  saveAs(blob, "Despesas.xlsx");
-  setLoading(false);
-};
+    for (const index in data) {
+      if (data[index].iddespesa.length > 0) {
+        data[index].Numero = data[index].iddespesa[0].numero;
+        data[index].Requisitante = data[index].iddespesa[0].nomerequester;
+        data[index].Criado = data[index].iddespesa[0].dataentrada;
+        data[index].Status =
+          data[index].iddespesa[0].status == "0"
+            ? "Rascunho"
+            : data[index].iddespesa[0].status == "1"
+            ? "Aguardando Aprovação"
+            : data[index].iddespesa[0].status == "2"
+            ? "Aprovado"
+            : data[index].iddespesa[0].status == "3"
+            ? "Reprovado"
+            : "";
+        data[index].Aprovador = data[index].iddespesa[0].nomeaprovador;
+        data[index].Tipo = data[index].categoriaText;
+        data[index].Valor = data[index].valor;
 
+        delete data[index].iddespesa;
+        delete data[index].categoriaText;
+        delete data[index].descr;
+        delete data[index].valor;
+        delete data[index].foto;
+        delete data[index]._id;
 
+        arrClone.push(data[index]);
+      }
+    }
+
+    //console.log(arrClone)
+
+    const worksheet = XLSX.utils.json_to_sheet(arrClone);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+    });
+    saveAs(blob, "Despesas.xlsx");
+    setLoading(false);
+  };
 
   return (
     <>
@@ -421,7 +470,7 @@ const exportToExcelSelected  = async () => {
                         Exportar Selecionados
                       </button>
                       <button
-                        style={{backgroundColor: "#44b678"}}
+                        style={{ backgroundColor: "#44b678" }}
                         type="button"
                         className="btn btn-info btn-flat margin"
                         onClick={() => {
@@ -431,27 +480,56 @@ const exportToExcelSelected  = async () => {
                         Exportar Tudo
                       </button>
                     </div>
-
-                    
-                  
                   </div>
 
-                  
-
-                  <div className="selectInterval" style={intervalWindow ? {display: "block"} : {display: "none"}} onClick={(e) => {checkModalClose(e)}}>
-                        <form className="contentInterval" onSubmit={(e) => (submitInterval(e))}>
-                          <div className="closeSelector" onClick={() => (setIntervalWindow(false))}><p>X</p></div>
-                          <h3>Intervalo Personalizado</h3>
-                          <div className="dateSelector">
-                            <p>Data inicial</p>
-                            <input type="date" placeholder="Data inicial" required onChange={(e) => {setStartDate(e.target.value)}}></input>
-                          </div>
-                          <div className="dateSelector">
-                            <p>Data Final</p>
-                            <input type="date" placeholder="Data inicial" required onChange={(e) => {setendDate(e.target.value)}}></input>
-                          </div>
-                          <button type="submit" className="intervalBtn">Aplicar</button>
-                        </form>
+                  <div
+                    className="selectInterval"
+                    style={
+                      intervalWindow
+                        ? { display: "block" }
+                        : { display: "none" }
+                    }
+                    onClick={(e) => {
+                      checkModalClose(e);
+                    }}
+                  >
+                    <form
+                      className="contentInterval"
+                      onSubmit={(e) => submitInterval(e)}
+                    >
+                      <div
+                        className="closeSelector"
+                        onClick={() => setIntervalWindow(false)}
+                      >
+                        <p>X</p>
+                      </div>
+                      <h3>Intervalo Personalizado</h3>
+                      <div className="dateSelector">
+                        <p>Data inicial</p>
+                        <input
+                          type="date"
+                          placeholder="Data inicial"
+                          required
+                          onChange={(e) => {
+                            setStartDate(e.target.value);
+                          }}
+                        ></input>
+                      </div>
+                      <div className="dateSelector">
+                        <p>Data Final</p>
+                        <input
+                          type="date"
+                          placeholder="Data inicial"
+                          required
+                          onChange={(e) => {
+                            setendDate(e.target.value);
+                          }}
+                        ></input>
+                      </div>
+                      <button type="submit" className="intervalBtn">
+                        Aplicar
+                      </button>
+                    </form>
                   </div>
 
                   <DataTableExtensions
@@ -459,6 +537,7 @@ const exportToExcelSelected  = async () => {
                     filterPlaceholder={"Buscar"}
                     exportHeaders={false}
                     print={false}
+                    
                   >
                     <DataTable
                       columns={columns}
@@ -469,6 +548,7 @@ const exportToExcelSelected  = async () => {
                       highlightOnHover
                       onSelectedRowsChange={handleChange}
                       noDataComponent={""}
+                      //onSort={handleSort}
                     />
                   </DataTableExtensions>
                 </div>
@@ -483,7 +563,6 @@ const exportToExcelSelected  = async () => {
     </>
   );
 }
-
 
 //nome,
 //descr,
